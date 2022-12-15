@@ -1,0 +1,59 @@
+service: serverless-culqi
+frameworkVersion: "3"
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: us-west-2
+  stage: dev
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - "dynamodb:PutItem"
+            - "dynamodb:GetItem"
+            - "dynamodb:DeleteItem"
+            - "dynamodb:Scan"
+
+          Resource:
+            - { "Fn::GetAtt": ["CardsTable", "Arn"] }
+
+functions:
+  createToken:
+    handler: src/handlers.createToken
+    events:
+      - httpApi:
+          method: POST
+          path: /token
+  getTokenCard:
+    handler: src/handlers.getCardData
+    events:
+      - httpApi:
+          method: GET
+          path: /token/{token}
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+
+resources:
+  Resources:
+    CardsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: CardsTable
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+
+custom:
+  esbuild:
+    bundle: true
+    minify: true
