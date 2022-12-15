@@ -6,7 +6,10 @@ export abstract class DynamoDBRepository<T extends Record<string, any>> {
   abstract TableName: string;
 
   constructor() {
-    this.docClient = new AWS.DynamoDB.DocumentClient();
+    this.docClient = new AWS.DynamoDB.DocumentClient({
+      region: "localhost",
+      endpoint: "http://localhost:8002",
+    });
   }
 
   async persist(Item: T): Promise<void> {

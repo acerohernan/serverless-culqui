@@ -3,6 +3,7 @@ import { transformAndValidate } from "class-transformer-validator";
 import { CreateTokenUseCase } from "./application/create-token";
 import { GetCardDataUseCase } from "./application/get-card-data";
 import { CreateTokenDTO } from "./domain/dtos/CreateTokenDTO";
+import { GetCardDataDTO } from "./domain/dtos/GetCardDataDTO";
 import { DynamoDBCardRepository } from "./infraestructure/DynamoDBCardReposiotry";
 
 export const createToken: APIGatewayProxyHandler = async (event) => {
@@ -63,18 +64,43 @@ export const createToken: APIGatewayProxyHandler = async (event) => {
 
 export const getCardData: APIGatewayProxyHandler = async (event) => {
   try {
+    /* Get the pk_key */
+    const bearer = event.headers["authorization"];
+    let pk_key = "";
+    if (bearer) pk_key = bearer.replace("Bearer ", "");
+
+    /* Get the token */
     const token = event.pathParameters?.token;
 
-    if (!token)
+    /* Validate the data */
+    const data = JSON.stringify({ pk_key, token });
+    let dto: GetCardDataDTO | null = null;
+
+    try {
+      dto = (await transformAndValidate(
+        GetCardDataDTO,
+        data
+      )) as GetCardDataDTO;
+    } catch (err: any) {
+      let errors: string[] = [];
+
+      err.forEach((err) => {
+        err.constraints &&
+          Object.values(err.constraints).forEach((message) =>
+            errors.push(message as string)
+          );
+      });
+
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Token is required" }),
+        body: JSON.stringify({ errors }),
       };
+    }
 
     const repository = new DynamoDBCardRepository();
     const service = new GetCardDataUseCase(repository);
 
-    return await service.run(token);
+    return await service.run(dto.token);
   } catch (err) {
     return {
       statusCode: 500,

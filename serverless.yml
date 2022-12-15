@@ -36,6 +36,7 @@ functions:
 plugins:
   - serverless-esbuild
   - serverless-offline
+  - serverless-dynamodb-local
 
 resources:
   Resources:
@@ -57,3 +58,11 @@ custom:
   esbuild:
     bundle: true
     minify: true
+
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8002
+      inMemory: true
+      migrate: true

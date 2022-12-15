@@ -15,9 +15,10 @@ export class GetCardDataUseCase implements UseCase {
       };
     }
 
+    const { cvv, pk_key, id, ...cardToSend } = card;
     return {
       statusCode: 200,
-      body: JSON.stringify(card),
+      body: JSON.stringify(cardToSend),
     };
   }
 }
