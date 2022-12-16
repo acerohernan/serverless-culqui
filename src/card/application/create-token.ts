@@ -1,7 +1,6 @@
 import { APIGatewayProxyResult } from "aws-lambda";
-import { customAlphabet } from "nanoid";
-import { alphanumeric } from "nanoid-dictionary";
 import { v4 as uuid } from "uuid";
+import { RandomString } from "../../shared/domain/RandomString";
 import { UseCase } from "../../shared/domain/UseCase";
 import { Card } from "../domain/Card";
 import { CardRepository } from "../domain/CardRepository";
@@ -12,8 +11,7 @@ export class CreateTokenUseCase implements UseCase {
 
   async run(dto: CreateTokenDTO): Promise<APIGatewayProxyResult> {
     /* Create a card token */
-    const nanoid = customAlphabet(alphanumeric, 16);
-    const card_token = nanoid();
+    const card_token = RandomString.generate(16);
 
     /* Save to the repository */
     let cardToSave: Card = {

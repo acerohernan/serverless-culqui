@@ -1,4 +1,4 @@
-import { APIGatewayProxyHandler } from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { transformAndValidate } from "class-transformer-validator";
 import { CreateTokenUseCase } from "./application/create-token";
 import { GetCardDataUseCase } from "./application/get-card-data";
@@ -6,7 +6,9 @@ import { CreateTokenDTO } from "./domain/dtos/CreateTokenDTO";
 import { GetCardDataDTO } from "./domain/dtos/GetCardDataDTO";
 import { DynamoDBCardRepository } from "./infraestructure/DynamoDBCardReposiotry";
 
-export const createToken: APIGatewayProxyHandler = async (event) => {
+export const createToken = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
   try {
     /* Get the pk_key */
     const bearer = event.headers["authorization"];
@@ -62,7 +64,9 @@ export const createToken: APIGatewayProxyHandler = async (event) => {
   }
 };
 
-export const getCardData: APIGatewayProxyHandler = async (event) => {
+export const getCardData = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
   try {
     /* Get the pk_key */
     const bearer = event.headers["authorization"];
