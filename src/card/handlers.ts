@@ -1,9 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { transformAndValidate } from "class-transformer-validator";
 import { CreateTokenUseCase } from "./application/create-token";
 import { GetCardDataUseCase } from "./application/get-card-data";
-import { CreateTokenDTO } from "./domain/dtos/CreateTokenDTO";
-import { GetCardDataDTO } from "./domain/dtos/GetCardDataDTO";
 import { DynamoDBCardRepository } from "./infraestructure/DynamoDBCardReposiotry";
 
 export const createToken = async (
@@ -15,47 +12,11 @@ export const createToken = async (
     let pk_key = "";
     if (bearer) pk_key = bearer.replace("Bearer ", "");
 
-    /* Validate all the data */
-    const body = JSON.parse(event.body || "{}");
-    const cardBody: string = JSON.stringify({
-      ...body,
-      pk_key,
-    } as CreateTokenDTO);
-
-    let dto: CreateTokenDTO | null = null;
-
-    try {
-      dto = (await transformAndValidate(
-        CreateTokenDTO,
-        cardBody
-      )) as CreateTokenDTO;
-    } catch (err: any) {
-      let errors: string[] = [];
-
-      err.forEach((err) => {
-        err.constraints &&
-          Object.values(err.constraints).forEach((message) =>
-            errors.push(message as string)
-          );
-      });
-
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ errors }),
-      };
-    }
-
-    if (!dto)
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "bad request" }),
-      };
-
     /* Initialize the use case */
     const repository = new DynamoDBCardRepository();
     const service = new CreateTokenUseCase(repository);
 
-    return await service.run(dto);
+    return await service.run(pk_key, JSON.parse(event.body || "{}"));
   } catch (err) {
     return {
       statusCode: 500,
@@ -74,37 +35,13 @@ export const getCardData = async (
     if (bearer) pk_key = bearer.replace("Bearer ", "");
 
     /* Get the token */
-    const token = event.pathParameters?.token;
+    const token = String(event.pathParameters?.token);
 
-    /* Validate the data */
-    const data = JSON.stringify({ pk_key, token });
-    let dto: GetCardDataDTO | null = null;
-
-    try {
-      dto = (await transformAndValidate(
-        GetCardDataDTO,
-        data
-      )) as GetCardDataDTO;
-    } catch (err: any) {
-      let errors: string[] = [];
-
-      err.forEach((err) => {
-        err.constraints &&
-          Object.values(err.constraints).forEach((message) =>
-            errors.push(message as string)
-          );
-      });
-
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ errors }),
-      };
-    }
-
+    /* Initialize the use case */
     const repository = new DynamoDBCardRepository();
     const service = new GetCardDataUseCase(repository);
 
-    return await service.run(dto.token);
+    return await service.run(pk_key, token);
   } catch (err) {
     return {
       statusCode: 500,
